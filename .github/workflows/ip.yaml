@@ -1,8 +1,8 @@
 name: Get Cloudflare IP Address
 
 on:
-  schedule: # 定时运行
-    - cron: '0 0 * * *'  # 每天凌晨0点执行
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch: # 手动触发
 
 jobs:
@@ -12,31 +12,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install required tools
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9' # 或你需要的 Python 版本
-
-      - name: Run script
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16' #或你需要的 node 版本
-        
-      - name: Install npm packages
-        run: npm install axios
-
-      - name: Get IP Address using Axios
+      - name: Get IP Address
         id: get-ip
         run: |
           #!/bin/bash
-          # 使用Axios请求数据
-          curl -s 'https://www.wetest.vip/page/cloudflare/address_v4.html' | jq -r '.html.body.div[2].div[2].div.div[2].div[2].table.tbody.tr[1].td[2]' > Fission_ip.txt
+          set -euo pipefail # Robust error handling
+          
+          # Use curl for web request
+          curl -s 'https://www.wetest.vip/page/cloudflare/address_v4.html' > webpage.html
+          
+          #Check if the file is created and not empty
+          if [[ ! -s webpage.html ]]; then
+              echo "Error: webpage.html is empty or does not exist. Check the URL."
+              exit 1
+          fi
+          
+          # Use jq with error handling
+          ip=$(jq -r '.html.body.div[2].div[2].div.div[2].div[2].table.tbody.tr[1].td[2]' webpage.html)
+          
+          if [[ -z "$ip" ]]; then
+            echo "Error: Could not extract IP address. Check the HTML structure."
+            exit 1
+          fi
+          
+          echo "$ip" > Fission_ip.txt
+          echo "::set-output name=cloudflareIp::${ip}"
           echo "::set-output name=cloudflareIpFile::Fission_ip.txt"
 
-
-      - name: Display IP Address (Optional)
-        if: steps.get-ip.outputs.cloudflareIpFile
+      - name: Display IP Address
+        if: steps.get-ip.outputs.cloudflareIp
         run: |
-          echo "Cloudflare IP Address:"
+          echo "Cloudflare IP Address: ${{ steps.get-ip.outputs.cloudflareIp }}"
           cat Fission_ip.txt
-        
