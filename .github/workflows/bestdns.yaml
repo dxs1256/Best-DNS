@@ -1,4 +1,4 @@
-name: Scheduled Python CI Workflow
+name: Python CI Workflow with Script Execution
 
 on:
   push:
@@ -7,18 +7,13 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: '0 */12 * * *' # 每隔 12 小时运行一次
 
 jobs:
   run-fission-script:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }} # 用于推送更改
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -29,27 +24,39 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip check  # Verify dependencies
 
-      - name: Verify input files
+      - name: Check and create Fission_domain.txt
+        id: create-domain
         run: |
-          if [ ! -f "Fission_ip.txt" ]; then
-            echo "Error: Fission_ip.txt not found. Please include this file in the repository." >&2
+          if [[ ! -f "Fission_ip.txt" ]]; then
+            echo "::error::Fission_ip.txt not found"
             exit 1
           fi
-          if [ ! -f "Fission_domain.txt" ]; then
+          if [[ ! -f "Fission_domain.txt" ]]; then
             touch Fission_domain.txt
+            echo "::set-output::name=domain-file-created::true"
+          else
+            echo "::set-output::name=domain-file-created::false"
+          fi
+
 
       - name: Run Fission script
-        id: run-fission-script
+        id: run-fission
         run: python Fission.py
+        if: steps.create-domain.outputs.domain-file-created == 'true'
 
-      - name: Commit and push output files
-        if: steps.run-fission-script.outcome == 'success'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Upload Fission_domain.txt
+        uses: actions/upload-artifact@v3
+        with:
+          name: Fission-output-domain
+          path: Fission_domain.txt
+        if: steps.create-domain.outputs.domain-file-created == 'true'
 
-          # 添加并提交更改
-          git add Fission_domain.txt dns_result.txt
-          git commit -m "Update output files from Fission.py execution [skip ci]"
-          git push
+
+      - name: Upload dns_result.txt
+        uses: actions/upload-artifact@v3
+        with:
+          name: Fission-output-dns
+          path: dns_result.txt
+        if: steps.run-fission.outcome == 'success' # Crucial: Check for success
