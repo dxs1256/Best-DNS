@@ -1,4 +1,4 @@
-name: Python CI Workflow with Script Execution
+name: bestdns
 
 on:
   push:
@@ -11,46 +11,55 @@ on:
 jobs:
   run-fission-script:
     runs-on: ubuntu-latest
-
     steps:
-      # 检出代码
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 设置 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 安装依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      # 检查必要的文件是否存在
-      - name: Verify input files
-        run: |
-          if [ ! -f "Fission_ip.txt" ]; then
-            echo "Error: Fission_ip.txt not found. Please include this file in the repository." >&2
+          # 添加检查依赖是否安装成功的步骤
+          pip check  # 检查依赖是否安装正确
+          if [ $? -ne 0 ]; then
+            echo "Error: Dependency installation failed." >&2
             exit 1
           fi
-          if [ ! -f "Fission_domain.txt" ]; then
-            echo "Creating empty Fission_domain.txt."
-            touch Fission_domain.txt
 
-      # 运行 Fission.py 脚本
+      - name: Check input files
+        id: check-input-files
+        run: |
+          if [[ ! -f "Fission_ip.txt" ]]; then
+            echo "Error: Fission_ip.txt not found. Please include this file in the repository." >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          if [[ ! -f "Fission_domain.txt" ]]; then
+            echo "Creating empty Fission_domain.txt"
+            touch Fission_domain.txt
+            echo "success" >> $GITHUB_OUTPUT  # 标记创建成功
+          else
+            echo "Fission_domain.txt exists." >> $GITHUB_OUTPUT  # 标记文件存在
+          fi
+
       - name: Run Fission script
         run: |
           python Fission.py
-          echo "Fission script executed successfully."
+          # 捕捉脚本运行的错误信息
+          if [ $? -ne 0 ]; then
+            echo "Error: Fission script failed." >&2
+            exit 1
+          fi
+          echo "Fission script executed successfully." >> $GITHUB_OUTPUT
 
-      # 保存输出文件（可选）
       - name: Upload output files
         uses: actions/upload-artifact@v3
+        if: steps.check-input-files.outputs.success == 'success' # 只在检查成功时上传
         with:
           name: Fission-output
-          path: |
-            Fission_domain.txt
-            dns_result.txt
+          path: Fission_domain.txt
+          path: dns_result.txt # 确保上传 dns_result.txt
