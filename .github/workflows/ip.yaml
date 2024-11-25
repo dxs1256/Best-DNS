@@ -2,8 +2,8 @@ name: Update Fission IP
 
 on:
   schedule:
-    - cron: '0 * * * *' # 每小时运行一次
-  workflow_dispatch: # 手动触发
+    - cron: '0 * * * *'  # 每小时运行一次
+  workflow_dispatch:  # 手动触发
 
 jobs:
   update-ip:
@@ -47,7 +47,7 @@ jobs:
             git push origin HEAD:main
           else
             echo "No changes detected, skipping commit."
-
+      
       # 等待 20 秒
       - name: Wait 20 seconds
         run: sleep 20
