@@ -49,14 +49,11 @@ jobs:
         EOF
         echo "Data written to ip.txt"
 
-    # 5. 推送更新到仓库
-    - name: Push changes to repository
-      env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add ip.txt
-        git commit -m "Update ip.txt with extracted data"
-        git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
-        git push origin HEAD
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.PAT_TOKEN }}
+        commit-message: "Update ip.txt with extracted data"
+        branch: update-ip-file # 创建的临时分支
+        title: "Update ip.txt"
+        body: "This PR updates the ip.txt file with the latest data."
