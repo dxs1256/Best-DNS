@@ -27,7 +27,7 @@ jobs:
           pip check  # Verify dependencies
 
       - name: Check and create Fission_domain.txt
-        id: check-input-files
+        id: create-domain
         run: |
           if [[ ! -f "Fission_ip.txt" ]]; then
             echo "::error::Fission_ip.txt not found"
@@ -35,10 +35,8 @@ jobs:
           fi
 
           if [[ ! -f "Fission_domain.txt" ]]; then
-            echo "::set-output::name=create-domain-txt-status-result::true"
             touch Fission_domain.txt
-          else
-            echo "::set-output::name=create-domain-txt-status-result::false"
+            echo "Fission_domain.txt created"
           fi
 
       - name: Run Fission script
@@ -46,7 +44,7 @@ jobs:
 
       - name: Upload output files
         uses: actions/upload-artifact@v3
-        if: steps.check-input-files.outputs.create-domain-txt-status-result == 'true' || steps.check-input-files.outputs.create-domain-txt-status-result != 'Error' # only upload if script ran successfully
+        if: steps.create-domain.outcome == 'success'  # Only upload if successful
         with:
           name: Fission-output
           paths: Fission_domain.txt, dns_result.txt
