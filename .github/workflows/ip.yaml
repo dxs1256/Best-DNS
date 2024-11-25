@@ -2,8 +2,8 @@ name: Update Fission_ip.txt
 
 on:
   schedule:
-    - cron: "0 0 * * *" # 每天运行一次
-  workflow_dispatch: # 手动触发
+    - cron: "0 0 * * *"  # 每天运行一次
+  workflow_dispatch:  # 手动触发
 
 jobs:
   update-file:
@@ -19,7 +19,8 @@ jobs:
         python-version: 3.x
 
     - name: Install dependencies
-      run: pip install requests lxml
+      run: |
+        pip install requests lxml
 
     - name: Fetch data and update file
       env:
@@ -32,23 +33,23 @@ jobs:
         url = "https://www.wetest.vip/page/cloudflare/address_v4.html"
         response = requests.get(url)
         response.raise_for_status()  # 确保请求成功
-        
+
         # 解析 HTML 并提取目标数据
         tree = html.fromstring(response.content)
         ip_data = tree.xpath('//*[@id="data-table"]/tbody/tr[1]/td[2]/text()')
-        
+
         # 调试：检查是否提取到了数据
         print(f"Extracted IP: {ip_data}")
-        
+
         if ip_data:
             ip = ip_data[0].strip()
         else:
             raise ValueError("未能提取目标数据")
-        
-        # 写入到文件
+
+        # 确保路径正确并写入文件
         with open("${{ env.OUTPUT_FILE }}", "w") as f:
             f.write(ip)
-        
+
     - name: Commit and Push changes
       env:
         PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
