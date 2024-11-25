@@ -2,7 +2,10 @@ name: Update BestDNS
 
 on:
   repository_dispatch:
-    types: [bestdns-update] # 匹配触发事件的名称
+    types: [bestdns-update]  # 匹配触发事件的名称
+
+permissions:
+  contents: write  # 允许工作流推送代码
 
 jobs:
   update-bestdns:
@@ -17,14 +20,7 @@ jobs:
         run: |
           echo "BestDNS workflow triggered by ip.yaml"
 
-permissions:
-  contents: write  # 允许工作流推送代码
-
-jobs:
-  run-fission-script:
-    runs-on: ubuntu-latest
-
-    steps:
+      # 以下部分是运行 Fission 脚本
       - name: Checkout code
         uses: actions/checkout@v3
         with:
