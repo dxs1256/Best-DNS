@@ -41,12 +41,11 @@ jobs:
           else
             echo "::set-output::name=domain-file-created::false"
           fi
-
-
+      # No more shell or env, use run directly
       - name: Run Fission script
         id: run-fission
-        run: python Fission.py
         if: steps.create-domain.outputs.domain-file-created == 'true'
+        run: python Fission.py
 
       - name: Upload Fission_domain.txt
         uses: actions/upload-artifact@v3
