@@ -27,9 +27,10 @@ jobs:
 
           # 循环提取每一行数据（共15行）
           for i in $(seq 1 15); do
-            IP=$(curl -s "$URL" | xmllint --html --xpath "string(//*[@id='data-table']/tbody/tr[$i]/td[2])" - 2>/dev/null)
-            if [ -n "$IP" ]; then
-              echo $IP >> $OUTPUT_FILE
+            DATA=$(curl -s "$URL" | xmllint --html --xpath "string(//*[@id='data-table']/tbody/tr[$i]/td[2])" - 2>/dev/null)
+            CLEANED_DATA=$(echo "$DATA" | sed 's/[\u4e00-\u9fa5]//g') # 删除汉字
+            if [ -n "$CLEANED_DATA" ]; then
+              echo $CLEANED_DATA >> $OUTPUT_FILE
             fi
           done
 
