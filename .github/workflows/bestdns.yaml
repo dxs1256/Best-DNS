@@ -1,4 +1,4 @@
-name: Scheduled Python CI Workflow
+name: Get the best domain name
 
 on:
   push:
