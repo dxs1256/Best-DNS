@@ -28,7 +28,7 @@ jobs:
           # 循环提取每一行数据（共15行）
           for i in $(seq 1 15); do
             DATA=$(curl -s "$URL" | xmllint --html --xpath "string(//*[@id='data-table']/tbody/tr[$i]/td[2])" - 2>/dev/null)
-            CLEANED_DATA=$(echo "$DATA" | sed 's/[\u4e00-\u9fa5]//g') # 删除汉字
+            CLEANED_DATA=$(echo "$DATA" | sed 's/[^0-9.]//g') # 只保留数字和点号
             if [ -n "$CLEANED_DATA" ]; then
               echo $CLEANED_DATA >> $OUTPUT_FILE
             fi
