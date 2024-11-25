@@ -1,9 +1,9 @@
 name: Get Cloudflare IP Address
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
   workflow_dispatch: # 手动触发
+  schedule:
+    - cron: '0 0 * * *' # 定时触发
 
 jobs:
   get_ip:
@@ -12,41 +12,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Install xmlstarlet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
+
       - name: Get IP Address
         id: get-ip
         run: |
-          #!/bin/bash
           set -euo pipefail
 
           # Download webpage
-          curl -s 'https://www.wetest.vip/page/cloudflare/address_v4.html' > webpage.html
-          
-          # Check if the file was created successfully
+          curl -s -f 'https://www.wetest.vip/page/cloudflare/address_v4.html' -o webpage.html
+
+          # Check if the file exists.  Crucial!
           if [[ ! -f webpage.html ]]; then
-              echo "Error: Failed to download webpage. Check the URL."
+              echo "Error downloading webpage. Check URL." >&2
               exit 1
           fi
-          
-          # Extract IP using xpath (more robust for dynamic HTML)
-          ip=$(
-            xmlstarlet sel -t -v "//tbody/tr[1]/td[2]/text()" webpage.html
-          )
 
-          # Check for successful extraction
+          # Extract IP using xpath
+          ip=$(xmlstarlet sel -t -v "//tbody/tr[1]/td[2]/text()" webpage.html)
+
+
+          # Check if IP was extracted. Crucial!
           if [[ -z "$ip" ]]; then
-            echo "Error: Could not extract IP address. Check the HTML structure or XPath expression."
+            echo "Error: Could not extract IP address. Check the webpage structure or the XPath." >&2
             exit 1
           fi
-          
-          # Remove leading/trailing whitespace (important for clean IP)
+
+          # Remove whitespace.  Critically important!
           ip="${ip//[[:space:]]/}"
 
           echo "$ip" > Fission_ip.txt
           echo "::set-output name=cloudflareIp::${ip}"
           echo "::set-output name=cloudflareIpFile::Fission_ip.txt"
 
+
       - name: Display IP Address
-        if: steps.get-ip.outputs.cloudflareIp
+        if: steps.get_ip.outputs.cloudflareIp
         run: |
-          echo "Cloudflare IP Address: ${{ steps.get-ip.outputs.cloudflareIp }}"
+          echo "Cloudflare IP Address: ${{ steps.get_ip.outputs.cloudflareIp }}"
           cat Fission_ip.txt
