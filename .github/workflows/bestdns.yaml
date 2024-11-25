@@ -1,6 +1,12 @@
 name: Scheduled Python CI Workflow
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   schedule:
     - cron: '0 */12 * * *' # 每隔 12 小时运行一次
 
