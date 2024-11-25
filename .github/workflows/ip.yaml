@@ -1,4 +1,4 @@
-name: Get IP
+name: Scrape Cloudflare Data and Save to File
 
 on:
   schedule:
@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的默认令牌
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -50,7 +48,7 @@ jobs:
                 file.write("No data found.")
         EOF
 
-     - name: Commit and Push Changes
+    - name: Commit and Push Changes
       env:
         PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
@@ -60,4 +58,3 @@ jobs:
         git add ip.txt
         git commit -m "Update ip.txt with extracted data"
         git push origin HEAD
-
