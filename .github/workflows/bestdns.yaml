@@ -1,7 +1,6 @@
 name: Get the best domain name
 
 on:
-  push:
   schedule:
     - cron: '0 */12 * * *'  # 每隔 12 小时运行一次
   workflow_dispatch: # 手动触发
