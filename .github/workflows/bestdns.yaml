@@ -11,51 +11,46 @@ on:
 jobs:
   run-fission-script:
     runs-on: ubuntu-latest
+
     steps:
+      # 检出代码
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 设置 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # 安装依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check and create Fission_domain.txt
-        id: create-domain
+      # 检查必要的文件是否存在
+      - name: Verify input files
         run: |
-          if [[ ! -f "Fission_ip.txt" ]]; then
-            echo "::error::Fission_ip.txt not found" >&2
+          if [ ! -f "Fission_ip.txt" ]; then
+            echo "Error: Fission_ip.txt not found. Please include this file in the repository." >&2
             exit 1
           fi
-
-          if [[ ! -f "Fission_domain.txt" ]]; then
+          if [ ! -f "Fission_domain.txt" ]; then
+            echo "Creating empty Fission_domain.txt."
             touch Fission_domain.txt
-            echo "::set-output::name=domainFileCreated::true"  # Use correct syntax
-          else
-            echo "::set-output::name=domainFileCreated::false"  # Use correct syntax
-          fi
-          
+
+      # 运行 Fission.py 脚本
       - name: Run Fission script
-        id: run-fission
-        if: steps.create-domain.outputs.domainFileCreated == 'true'
-        run: python Fission.py
+        run: |
+          python Fission.py
+          echo "Fission script executed successfully."
 
-      - name: Upload Fission_domain.txt
+      # 保存输出文件（可选）
+      - name: Upload output files
         uses: actions/upload-artifact@v3
         with:
-          name: Fission-output-domain
-          path: Fission_domain.txt
-        if: steps.create-domain.outputs.domainFileCreated == 'true'
-
-
-      - name: Upload dns_result.txt
-        uses: actions/upload-artifact@v3
-        with:
-          name: Fission-output-dns
-          path: dns_result.txt
-        if: steps.run-fission.outcome == 'success'
+          name: Fission-output
+          path: |
+            Fission_domain.txt
+            dns_result.txt
