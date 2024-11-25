@@ -22,8 +22,16 @@ jobs:
       - name: Fetch IP and Update File
         run: |
           URL="https://www.wetest.vip/page/cloudflare/address_v4.html"
-          IP=$(curl -s "$URL" | xmllint --html --xpath "string(//html/body/div[2]/div[2]/div/div[2]/div[2]/table/tbody/tr[1]/td[2])" - 2>/dev/null)
-          echo $IP > Fission_ip.txt
+          OUTPUT_FILE="Fission_ip.txt"
+          echo -n > $OUTPUT_FILE # 清空文件内容
+
+          # 循环提取每一行数据（共15行）
+          for i in $(seq 1 15); do
+            IP=$(curl -s "$URL" | xmllint --html --xpath "string(//*[@id='data-table']/tbody/tr[$i]/td[2])" - 2>/dev/null)
+            if [ -n "$IP" ]; then
+              echo $IP >> $OUTPUT_FILE
+            fi
+          done
 
       # 提交更改
       - name: Commit and Push Changes
@@ -34,7 +42,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add Fission_ip.txt
-            git commit -m "Update Fission_ip.txt with latest IP"
+            git commit -m "Update Fission_ip.txt with latest IPs"
             git push origin HEAD:main
           else
             echo "No changes detected, skipping commit."
