@@ -1,56 +1,52 @@
-name: Python CI Workflow with Script Execution
+name: Scheduled Python CI Workflow
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  schedule:
+    - cron: '0 */12 * * *'  # 每隔 12 小时运行一次
 
 jobs:
   run-fission-script:
     runs-on: ubuntu-latest
 
     steps:
-      # 检出代码
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 用于推送更改
 
-      # 设置 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 安装依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 检查必要的文件是否存在
       - name: Verify input files
         run: |
           if [ ! -f "Fission_ip.txt" ]; then
             echo "Error: Fission_ip.txt not found. Please include this file in the repository." >&2
             exit 1
           fi
+
           if [ ! -f "Fission_domain.txt" ]; then
             echo "Creating empty Fission_domain.txt."
             touch Fission_domain.txt
+          fi
 
-      # 运行 Fission.py 脚本
       - name: Run Fission script
-        run: |
-          python Fission.py
-          echo "Fission script executed successfully."
+        id: run-fission-script
+        run: python Fission.py
 
-      # 保存输出文件（可选）
-      - name: Upload output files
-        uses: actions/upload-artifact@v3
-        with:
-          name: Fission-output
-          path: |
-            Fission_domain.txt
-            dns_result.txt
+      - name: Commit and push output files
+        if: steps.run-fission-script.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 添加并提交更改
+          git add Fission_domain.txt dns_result.txt
+          git commit -m "Update output files from Fission.py execution [skip ci]"
+          git push
