@@ -1,9 +1,21 @@
-name: Get the best domain name
+name: Update BestDNS
 
 on:
-  schedule:
-    - cron: '0 */12 * * *'  # 每隔 12 小时运行一次
-  workflow_dispatch: # 手动触发
+  repository_dispatch:
+    types: [bestdns-update] # 匹配触发事件的名称
+
+jobs:
+  update-bestdns:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 这里可以添加具体的逻辑，例如解析 IP 并更新 DNS 配置
+      - name: Execute BestDNS Logic
+        run: |
+          echo "BestDNS workflow triggered by ip.yaml"
 
 permissions:
   contents: write  # 允许工作流推送代码
