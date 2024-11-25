@@ -1,56 +1,38 @@
-name: Get Cloudflare IP Address
+name: Update Fission IP
 
 on:
-  workflow_dispatch: # 手动触发
   schedule:
-    - cron: '0 0 * * *' # 定时触发
+    - cron: '0 * * * *' # 每小时运行一次
+  workflow_dispatch: # 手动触发
 
 jobs:
-  get_ip:
+  update-ip:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      # 检出代码库
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install xmlstarlet
+      # 安装 curl 和 xmllint
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y curl libxml2-utils
+
+      # 获取数据并写入文件
+      - name: Fetch IP and Update File
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xmlstarlet
+          URL="https://www.wetest.vip/page/cloudflare/address_v4.html"
+          IP=$(curl -s "$URL" | xmllint --html --xpath "string(//html/body/div[2]/div[2]/div/div[2]/div[2]/table/tbody/tr[1]/td[2])" - 2>/dev/null)
+          echo $IP > Fission_ip.txt
 
-      - name: Get IP Address
-        id: get-ip
+      # 提交更改
+      - name: Commit and Push Changes
         run: |
-          set -euo pipefail
-
-          # Download webpage
-          curl -s -f 'https://www.wetest.vip/page/cloudflare/address_v4.html' -o webpage.html
-
-          # Check if the file exists.  Crucial!
-          if [[ ! -f webpage.html ]]; then
-              echo "Error downloading webpage. Check URL." >&2
-              exit 1
-          fi
-
-          # Extract IP using xpath
-          ip=$(xmlstarlet sel -t -v "//tbody/tr[1]/td[2]/text()" webpage.html)
-
-
-          # Check if IP was extracted. Crucial!
-          if [[ -z "$ip" ]]; then
-            echo "Error: Could not extract IP address. Check the webpage structure or the XPath." >&2
-            exit 1
-          fi
-
-          # Remove whitespace.  Critically important!
-          ip="${ip//[[:space:]]/}"
-
-          echo "$ip" > Fission_ip.txt
-          echo "::set-output name=cloudflareIp::${ip}"
-          echo "::set-output name=cloudflareIpFile::Fission_ip.txt"
-
-
-      - name: Display IP Address
-        if: steps.get_ip.outputs.cloudflareIp
-        run: |
-          echo "Cloudflare IP Address: ${{ steps.get_ip.outputs.cloudflareIp }}"
-          cat Fission_ip.txt
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add Fission_ip.txt
+            git commit -m "Update Fission_ip.txt with latest IP"
+            git push
+          else
+            echo "No changes detected, skipping commit."
