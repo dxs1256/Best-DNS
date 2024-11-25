@@ -3,7 +3,6 @@ name: Get Cloudflare IP Address
 on:
   schedule:
     - cron: '0 0 * * *'
-  workflow_dispatch: # 手动触发
 
 jobs:
   get_ip:
@@ -16,25 +15,31 @@ jobs:
         id: get-ip
         run: |
           #!/bin/bash
-          set -euo pipefail # Robust error handling
-          
-          # Use curl for web request
+          set -euo pipefail
+
+          # Download webpage
           curl -s 'https://www.wetest.vip/page/cloudflare/address_v4.html' > webpage.html
           
-          #Check if the file is created and not empty
-          if [[ ! -s webpage.html ]]; then
-              echo "Error: webpage.html is empty or does not exist. Check the URL."
+          # Check if the file was created successfully
+          if [[ ! -f webpage.html ]]; then
+              echo "Error: Failed to download webpage. Check the URL."
               exit 1
           fi
           
-          # Use jq with error handling
-          ip=$(jq -r '.html.body.div[2].div[2].div.div[2].div[2].table.tbody.tr[1].td[2]' webpage.html)
-          
+          # Extract IP using xpath (more robust for dynamic HTML)
+          ip=$(
+            xmlstarlet sel -t -v "//tbody/tr[1]/td[2]/text()" webpage.html
+          )
+
+          # Check for successful extraction
           if [[ -z "$ip" ]]; then
-            echo "Error: Could not extract IP address. Check the HTML structure."
+            echo "Error: Could not extract IP address. Check the HTML structure or XPath expression."
             exit 1
           fi
           
+          # Remove leading/trailing whitespace (important for clean IP)
+          ip="${ip//[[:space:]]/}"
+
           echo "$ip" > Fission_ip.txt
           echo "::set-output name=cloudflareIp::${ip}"
           echo "::set-output name=cloudflareIpFile::Fission_ip.txt"
