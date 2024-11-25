@@ -2,12 +2,13 @@ name: Update Fission_ip.txt
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # 每天运行一次
+    - cron: "0 0 * * *"  # 每天凌晨0点运行
   workflow_dispatch:  # 支持手动触发
 
 jobs:
   update-file:
     runs-on: ubuntu-latest
+    timeout-minutes: 5 # 设置超时时间，防止长时间运行
 
     steps:
     - name: Checkout repository
@@ -16,45 +17,65 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.12"
+        python-version: "3.10"  # 使用一个稳定的版本
 
     - name: Install dependencies
       run: |
-        pip install requests lxml
-
+        pip install requests lxml ipaddress
+        # 这里很重要，安装ipaddress模块用于验证IP地址
+        
     - name: Fetch data and update file
+      id: fetch-data
       run: |
         #!/usr/bin/env python3
         import requests
         from lxml import html
+        import ipaddress
+        import os
 
         url = "https://www.wetest.vip/page/cloudflare/address_v4.html"
-        response = requests.get(url)
-        response.raise_for_status()  # 确保请求成功
 
-        # 解析 HTML 并提取目标数据
-        tree = html.fromstring(response.content)
-        ip_data = tree.xpath('//*[@id="data-table"]/tbody/tr[1]/td[2]/text()')
+        try:
+          response = requests.get(url, timeout=10)
+          response.raise_for_status()  # 检查HTTP状态码
 
-        # 调试：检查是否提取到了数据
-        print(f"Extracted IP: {ip_data}")
+          tree = html.fromstring(response.content)
+          ip_data = tree.xpath('//*[@id="data-table"]/tbody/tr[1]/td[2]/text()')
 
-        if ip_data:
+          if ip_data:
             ip = ip_data[0].strip()
-        else:
-            raise ValueError("未能提取目标数据")
+            
+            # 验证IP地址
+            try:
+              ipaddress.ip_address(ip)
+              with open("Fission_ip.txt", "w") as f:
+                f.write(ip)
+                
+              # 设置输出为成功
+              echo "::set-output name=success::true"
+            except ValueError:
+              echo "::error::无效的IP地址格式"
+              exit 1  # 标记失败
+          else:
+            echo "::error::未找到IP地址"
+            exit 1  # 标记失败
+            
+        except requests.exceptions.RequestException as e:
+          echo "::error::请求错误: ${e}"
+          exit 1
+        except Exception as e:
+          echo "::error::其他错误: ${e}"
+          exit 1
 
-        # 确保路径正确并写入文件
-        with open("Fission_ip.txt", "w") as f:
-            f.write(ip)
 
     - name: Commit and Push changes
+      if: steps.fetch-data.outputs.success == 'true'
       env:
-        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用GITHUB_TOKEN
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add Fission_ip.txt
         git commit -m "Update Fission_ip.txt with extracted data"
-        git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
-        git push origin HEAD
+        git push
+        # 使用GITHUB_TOKEN替代，更安全
