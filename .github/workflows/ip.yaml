@@ -11,8 +11,7 @@ jobs:
     timeout-minutes: 5 # 设置超时时间，防止长时间运行
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -23,7 +22,7 @@ jobs:
       run: |
         pip install requests lxml ipaddress
         # 这里很重要，安装ipaddress模块用于验证IP地址
-        
+
     - name: Fetch data and update file
       id: fetch-data
       run: |
@@ -31,51 +30,23 @@ jobs:
         import requests
         from lxml import html
         import ipaddress
-        import os
-
+        
         url = "https://www.wetest.vip/page/cloudflare/address_v4.html"
 
         try:
-          response = requests.get(url, timeout=10)
-          response.raise_for_status()  # 检查HTTP状态码
-
-          tree = html.fromstring(response.content)
-          ip_data = tree.xpath('//*[@id="data-table"]/tbody/tr[1]/td[2]/text()')
-
-          if ip_data:
-            ip = ip_data[0].strip()
-            
-            # 验证IP地址
-            try:
-              ipaddress.ip_address(ip)
-              with open("Fission_ip.txt", "w") as f:
-                f.write(ip)
-                
-              # 设置输出为成功
-              echo "::set-output name=success::true"
-            except ValueError:
-              echo "::error::无效的IP地址格式"
-              exit 1  # 标记失败
-          else:
-            echo "::error::未找到IP地址"
-            exit 1  # 标记失败
-            
+          # ... (Your existing Python code, remove the shell and env sections) ...
         except requests.exceptions.RequestException as e:
-          echo "::error::请求错误: ${e}"
-          exit 1
+          # ... (Error handling, as before) ...
         except Exception as e:
-          echo "::error::其他错误: ${e}"
-          exit 1
-
+          # ... (Error handling, as before) ...
 
     - name: Commit and Push changes
       if: steps.fetch-data.outputs.success == 'true'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用GITHUB_TOKEN
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用GITHUB_TOKEN
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add Fission_ip.txt
         git commit -m "Update Fission_ip.txt with extracted data"
         git push
-        # 使用GITHUB_TOKEN替代，更安全
