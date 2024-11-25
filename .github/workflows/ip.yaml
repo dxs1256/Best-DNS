@@ -1,4 +1,4 @@
-name: Scrape Cloudflare Data and Save to File
+name: Get IP
 
 on:
   schedule:
@@ -50,12 +50,14 @@ jobs:
                 file.write("No data found.")
         EOF
 
-    - name: Commit and Push Changes
+     - name: Commit and Push Changes
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
         git add ip.txt
         git commit -m "Update ip.txt with extracted data"
-        git push
+        git push origin HEAD
+
