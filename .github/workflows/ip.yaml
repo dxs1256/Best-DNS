@@ -47,9 +47,12 @@ jobs:
             git push origin HEAD:main
           else
             echo "No changes detected, skipping commit."
-          fi
-          
-       # 触发 bestdns.yaml
+
+      # 等待 20 秒
+      - name: Wait 20 seconds
+        run: sleep 20
+
+      # 触发 bestdns.yaml
       - name: Trigger BestDNS Workflow
         uses: peter-evans/repository-dispatch@v2
         with:
