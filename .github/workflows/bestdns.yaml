@@ -42,16 +42,10 @@ jobs:
       - name: Run Fission script
         run: python Fission.py
 
-      - name: 上传 Fission_domain.txt
+      - name: Upload outputs
         uses: actions/upload-artifact@v3
         with:
-          name: Fission-output
-          path: Fission_domain.txt
-          if: steps.create-domain.outcome == 'success'
-
-      - name: 上传 dns_result.txt
-        uses: actions/upload-artifact@v3
-        with:
-          name: Fission-output
-          path: dns_result.txt
-          if: steps.create-domain.outcome == 'success'
+          name: Fission-outputs
+          # Upload multiple files with a single run
+          paths: Fission_domain.txt,dns_result.txt
+          if: steps.create-domain.outcome == 'success' && steps.run-fission-script.outcome == 'success'  #Upload only if both create-domain and Run Fission steps succeed.
