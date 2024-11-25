@@ -19,44 +19,49 @@ jobs:
         python-version: "3.10"
 
     - name: Install dependencies
-      run: |
-        pip install requests lxml ipaddress
+      run: pip install requests lxml ipaddress
 
     - name: Fetch and update IP
+      id: fetch-ip
       run: |
         python -u -c '
           import requests
           from lxml import html
           import ipaddress
-          import os
+          import sys
 
           url = "https://www.wetest.vip/page/cloudflare/address_v4.html"
 
           try:
-              response = requests.get(url, timeout=10)
-              response.raise_for_status()  # 检查 HTTP 状态码
-              tree = html.fromstring(response.content)
-              ip_data = tree.xpath('//*[@id="data-table"]/tbody/tr[1]/td[2]/text()')
-              
-              if ip_data:
-                  ip = ip_data[0].strip()
-                  try:
-                      ipaddress.ip_address(ip)  # 验证 IP 地址
-                      with open("Fission_ip.txt", "w") as f:
-                          f.write(ip)
-                      print("::set-output name=success::true") # 设置输出
-                  except ValueError:
-                      print("::error::无效的 IP 地址格式")
-              else:
-                  print("::error::未找到 IP 地址")
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()  # 检查 HTTP 状态码
+            tree = html.fromstring(response.content)
+            ip_data = tree.xpath('//*[@id="data-table"]/tbody/tr[1]/td[2]/text()')
+
+            if ip_data:
+              ip = ip_data[0].strip()
+              try:
+                ipaddress.ip_address(ip)
+                with open("Fission_ip.txt", "w") as f:
+                  f.write(ip)
+                print("::set-output name=success::true")
+              except ValueError:
+                print(f"::error::Invalid IP address format: {ip}")
+                sys.exit(1)  # Critical: Exit with error code
+            else:
+              print("::error::No IP address found.")
+              sys.exit(1)  # Critical: Exit with error code
+
           except requests.exceptions.RequestException as e:
-              print(f"::error::请求错误: {e}")
+            print(f"::error::Request error: {e}")
+            sys.exit(1)
           except Exception as e:
-              print(f"::error::其他错误: {e}")
+            print(f"::error::An error occurred: {e}")
+            sys.exit(1)
         '
 
     - name: Commit and Push changes
-      if: steps.Fetch-and-update-IP.outputs.success == 'true'
+      if: steps.fetch-ip.outputs.success == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
