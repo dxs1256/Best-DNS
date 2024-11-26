@@ -67,7 +67,7 @@ jobs:
           keep_minimum_runs: 10  # 保留最近的 10 次工作流运行
           baseUrl: https://api.github.com
           repository: dxs1256/Best-DNS
-          retain_days: 30  # 保留最近 30 天的工作流记录
+          retain_days: 10  # 保留最近 10 天的工作流记录
         env:
           pythonLocation: /opt/hostedtoolcache/Python/3.9.20/x64
           PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.20/x64/lib/pkgconfig
