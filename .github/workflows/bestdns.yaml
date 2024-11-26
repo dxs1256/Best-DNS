@@ -64,7 +64,7 @@ jobs:
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}  # 使用 Personal Access Token
-          keep_minimum_runs: 5  # 保留最近的 10 次工作流运行
+          keep_minimum_runs: 2  # 保留最近的 10 次工作流运行
           baseUrl: https://api.github.com
           repository: dxs1256/Best-DNS
           retain_days: 10  # 保留最近 30 天的工作流记录
