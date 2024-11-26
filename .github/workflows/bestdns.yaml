@@ -69,7 +69,7 @@ jobs:
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          keep_minimum_runs: 10  # 保留最近的 10 次工作流记录
+          keep_minimum_runs: 2  # 保留最近的 10 次工作流记录
           baseUrl: https://api.github.com
           repository: dxs1256/Best-DNS # 确保这是你的仓库名
           dry_run: false
