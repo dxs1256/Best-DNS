@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write  # 允许工作流推送代码
+  workflow: write  # 允许删除工作流运行记录
 
 jobs:
   update-bestdns:
@@ -16,7 +17,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 这里可以添加具体的逻辑，例如解析 IP 并更新 DNS 配置
       - name: Execute BestDNS Logic
         run: |
           echo "BestDNS workflow triggered by ip.yaml"
@@ -58,22 +58,21 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # 添加并提交更改
           git add Fission_domain.txt
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
-      # 删除旧的工作流记录，只保留最近 10 次
+      # 删除旧的工作流记录，只保留最近 10 次已完成的工作流
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
           keep_minimum_runs: 10  # 保留最近的 10 次工作流记录
+          state: completed  # 只删除已完成的工作流
           baseUrl: https://api.github.com
           repository: dxs1256/Best-DNS
 
-      # 可选：启用调试模式
+      # 启用调试模式
       - name: Enable Debug Mode for Delete Workflow Runs
         run: |
           echo "DEBUG mode enabled"
