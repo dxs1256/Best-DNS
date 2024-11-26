@@ -59,7 +59,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Fission_domain.txt
+          git add Fission_domain.txt dns_result.txt
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
