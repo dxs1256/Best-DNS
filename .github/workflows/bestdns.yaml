@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: write  # 允许工作流推送代码
-  workflow: write  # 允许删除工作流运行记录
+  workflows: write # 允许删除工作流运行记录
 
 jobs:
   update-bestdns:
