@@ -65,15 +65,19 @@ jobs:
 
       # 删除旧的工作流记录，只保留最近 10 次
       - name: Delete workflow runs
+        id: DeleteWorkflowRuns # 给步骤起个ID方便后面引用
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
           keep_minimum_runs: 10  # 保留最近的 10 次工作流记录
           baseUrl: https://api.github.com
-          repository: dxs1256/Best-DNS
-          dry_run: false  # <-- 修改为 false
-        if: success() #确保只有在前面步骤成功后才执行删除操作
+          repository: dxs1256/Best-DNS # 确保这是你的仓库名
+          dry_run: false
 
+      - name: Print Delete Workflow Runs Result
+        run: |
+          echo "Delete Workflow Runs Conclusion: ${{ steps.DeleteWorkflowRuns.conclusion }}"
+          echo "Delete Workflow Runs Output: ${{ steps.DeleteWorkflowRuns.output }}"
 
       - name: Check Delete Workflow Runs Result
         if: steps.DeleteWorkflowRuns.conclusion == 'failure'
