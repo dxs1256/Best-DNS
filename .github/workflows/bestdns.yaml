@@ -61,11 +61,19 @@ jobs:
 
           # 确保 Fission_domain_success.txt 存在，并清空文件（如果存在）
           > Fission_domain_success.txt
+          > ping_errors.log  # 清空错误日志文件
 
           # 读取 Fission_domain.txt 中的域名并并行进行 ping 测试
-          cat Fission_domain.txt | parallel -j 10 "ping -c 1 -W 2 {} &>/dev/null && echo {} >> Fission_domain_success.txt || echo 'Failed to ping: {}' >> ping_errors.log"
+          cat Fission_domain.txt | parallel -j 5 "
+            echo 'Pinging {}...'; 
+            nslookup {} &>/dev/null && 
+            ping -c 1 -W 5 {} &>/dev/null && 
+            echo '{}' >> Fission_domain_success.txt || 
+            echo 'Failed to ping: {}' >> ping_errors.log
+          "
 
           # 输出 ping 错误日志以帮助排查
+          echo "Ping Errors:"
           cat ping_errors.log
 
           # 检查 Fission_domain_success.txt 是否为空
