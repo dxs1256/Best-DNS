@@ -63,15 +63,15 @@ jobs:
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
-      # 删除旧的工作流记录，只保留最近 10 次已完成的工作流
+      # 删除旧的工作流记录，只保留最近 10 次
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
           keep_minimum_runs: 10  # 保留最近的 10 次工作流记录
-          state: completed  # 只删除已完成的工作流
           baseUrl: https://api.github.com
           repository: dxs1256/Best-DNS
+          dry_run: true  # 启用 dry_run，首先检查删除情况
 
       # 启用调试模式
       - name: Enable Debug Mode for Delete Workflow Runs
