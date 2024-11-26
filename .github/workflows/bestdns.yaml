@@ -68,13 +68,13 @@ jobs:
             echo 'Checking {}...';
             
             # 检查 DNS 解析
-            nslookup {} &>/dev/null && 
+            nslookup {} &>/dev/null &&
             
             # 尝试 HTTP 请求检查（优先用 HTTP 头判断）
-            curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://{} | grep -q '200' && 
+            curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://{} | grep -q '200' &&
             
             # 如果 HTTP 检查成功，再进行 ping 检查
-            ping -c 1 -W 5 {} &>/dev/null && 
+            ping -c 1 -W 5 {} &>/dev/null &&
             
             echo '{}' >> Fission_domain_success.txt || 
             echo 'Failed to ping or HTTP check: {}' >> ping_errors.log
