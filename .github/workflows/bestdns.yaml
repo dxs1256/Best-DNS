@@ -63,7 +63,10 @@ jobs:
           > Fission_domain_success.txt
 
           # 读取 Fission_domain.txt 中的域名并并行进行 ping 测试
-          cat Fission_domain.txt | parallel -j 10 "ping -c 1 -W 2 {} &>/dev/null && echo {} >> Fission_domain_success.txt"
+          cat Fission_domain.txt | parallel -j 10 "ping -c 1 -W 2 {} &>/dev/null && echo {} >> Fission_domain_success.txt || echo 'Failed to ping: {}' >> ping_errors.log"
+
+          # 输出 ping 错误日志以帮助排查
+          cat ping_errors.log
 
           # 检查 Fission_domain_success.txt 是否为空
           if [ ! -s Fission_domain_success.txt ]; then
