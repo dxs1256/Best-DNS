@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write  # 允许工作流推送代码
+  workflows: write  # 允许删除工作流记录
 
 jobs:
   update-bestdns:
@@ -22,11 +23,6 @@ jobs:
           echo "BestDNS workflow triggered by ip.yaml"
 
       # 以下部分是运行 Fission 脚本
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -67,4 +63,15 @@ jobs:
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
+          token: ${{ secrets.PAT_TOKEN }}  # 使用 Personal Access Token
           keep_minimum_runs: 10  # 保留最近的 10 次工作流运行
+          baseUrl: https://api.github.com
+          repository: dxs1256/Best-DNS
+          retain_days: 30  # 保留最近 30 天的工作流记录
+        env:
+          pythonLocation: /opt/hostedtoolcache/Python/3.9.20/x64
+          PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.20/x64/lib/pkgconfig
+          Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.20/x64
+          Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.20/x64
+          Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.20/x64
+          LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.20/x64/lib
