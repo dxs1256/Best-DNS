@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write  # 允许工作流推送代码
-  # 删除了 'workflows' 权限，这个权限不需要通过 'permissions' 提供
 
 jobs:
   update-bestdns:
@@ -23,6 +22,11 @@ jobs:
           echo "BestDNS workflow triggered by ip.yaml"
 
       # 以下部分是运行 Fission 脚本
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -60,18 +64,18 @@ jobs:
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
+      # 删除旧的工作流记录，只保留最近 10 次
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          token: ${{ secrets.PAT_TOKEN }}  # 使用 Personal Access Token
-          keep_minimum_runs: 2  # 保留最近的 10 次工作流运行
+          token: ${{ secrets.PAT_TOKEN }}
+          keep_minimum_runs: 10  # 保留最近的 10 次工作流记录
           baseUrl: https://api.github.com
           repository: dxs1256/Best-DNS
-          retain_days: 10  # 保留最近 30 天的工作流记录
+
+      # 可选：启用调试模式
+      - name: Enable Debug Mode for Delete Workflow Runs
+        run: |
+          echo "DEBUG mode enabled"
         env:
-          pythonLocation: /opt/hostedtoolcache/Python/3.9.20/x64
-          PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.20/x64/lib/pkgconfig
-          Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.20/x64
-          Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.20/x64
-          Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.20/x64
-          LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.20/x64/lib
+          DEBUG: true  # 启用调试模式来查看更多日志
