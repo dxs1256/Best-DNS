@@ -63,3 +63,8 @@ jobs:
           git add Fission_domain.txt
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          keep_minimum_runs: 10  # 保留最近的 1 次工作流运行
