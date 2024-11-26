@@ -59,8 +59,17 @@ jobs:
           # 安装 parallel 工具（如果不存在）
           sudo apt-get update && sudo apt-get install -y parallel
 
+          # 确保 Fission_domain_success.txt 存在，并清空文件（如果存在）
+          > Fission_domain_success.txt
+
           # 读取 Fission_domain.txt 中的域名并并行进行 ping 测试
-          cat Fission_domain.txt | parallel -j 10 ping -c 1 -W 2 {} &>/dev/null && echo {} >> Fission_domain_success.txt
+          cat Fission_domain.txt | parallel -j 10 "ping -c 1 -W 2 {} &>/dev/null && echo {} >> Fission_domain_success.txt"
+
+          # 检查 Fission_domain_success.txt 是否为空
+          if [ ! -s Fission_domain_success.txt ]; then
+            echo "Error: No domains reachable. Exiting." >&2
+            exit 1
+          fi
 
           # 更新 Fission_domain.txt 只保留能够 ping 通的域名
           mv Fission_domain_success.txt Fission_domain.txt
