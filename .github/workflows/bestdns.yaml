@@ -1,14 +1,13 @@
 name: Update BestDNS
 
 on:
-  workflow_dispatch:  # 手动触发
+  workflow_dispatch:
   repository_dispatch:
-    types: [bestdns-update]  # 匹配触发事件的名称
+    types: [bestdns-update]
 
 permissions:
-  contents: write  # 允许工作流推送代码
-  id-token: write  # 允许获取 ID Token 用于认证
-  actions: read    # 允许工作流读取 actions
+  contents: write
+  workflow: write
 
 jobs:
   update-bestdns:
@@ -58,28 +57,22 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Fission_domain.txt dns_result.txt
+          git add Fission_domain.txt
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
+      # 删除旧的工作流记录，只保留最近的 10 次
       - name: Delete workflow runs
-        id: DeleteWorkflowRuns
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.PAT_TOKEN }}
-          keep_minimum_runs: 2  # 保留最近的 10 次工作流记录
+          keep_minimum_runs: 10  # 保留最新的 10 次工作流
           baseUrl: https://api.github.com
-          repository: dxs1256/Best-DNS  # 确保这是你的仓库名
-          dry_run: false
-
-      - name: Print Delete Workflow Runs Result
+          repository: dxs1256/Best-DNS
+          
+      # 可选：启用调试模式
+      - name: Enable Debug Mode for Delete Workflow Runs
         run: |
-          echo "Delete Workflow Runs Conclusion: ${{ steps.DeleteWorkflowRuns.conclusion }}"
-          echo "Delete Workflow Runs Output: ${{ steps.DeleteWorkflowRuns.outputs.result }}"
-
-      - name: Check Delete Workflow Runs Result
-        if: steps.DeleteWorkflowRuns.conclusion == 'failure'
-        run: |
-          echo "Error deleting workflow runs: ${{ steps.DeleteWorkflowRuns.conclusion }}"
-          echo "Error message: ${{ steps.DeleteWorkflowRuns.outputs.result }}"
-          exit 1  # 终止工作流
+          echo "DEBUG mode enabled"
+        env:
+          DEBUG: true
