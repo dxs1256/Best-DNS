@@ -1,9 +1,11 @@
-name: Update BestDNS
+name: Update BestDNS and Delete old workflow runs
 
 on:
   workflow_dispatch:  # 手动触发
   repository_dispatch:
     types: [bestdns-update]  # 匹配触发事件的名称
+  schedule:
+    - cron: '0 0 1 * *'  # 每月1日00:00执行
 
 permissions:
   contents: write  # 允许工作流推送代码
@@ -13,7 +15,6 @@ permissions:
 jobs:
   update-bestdns:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -22,7 +23,6 @@ jobs:
         run: |
           echo "BestDNS workflow triggered by ip.yaml"
 
-      # 以下部分是运行 Fission 脚本
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -63,25 +63,28 @@ jobs:
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
-      # 删除旧的工作流记录，只保留最近 10 次
+  delete-old-workflow-runs:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
       - name: Delete workflow runs
-        id: DeleteWorkflowRuns # 给步骤起个ID方便后面引用
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          token: ${{ secrets.PAT_TOKEN }}
-          keep_minimum_runs: 2  # 保留最近的 10 次工作流记录
-          baseUrl: https://api.github.com
-          repository: dxs1256/Best-DNS # 确保这是你的仓库名
-          dry_run: false
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 30
+          keep_minimum_runs: 6
 
       - name: Print Delete Workflow Runs Result
         run: |
           echo "Delete Workflow Runs Conclusion: ${{ steps.DeleteWorkflowRuns.conclusion }}"
-          echo "Delete Workflow Runs Output: ${{ steps.DeleteWorkflowRuns.output }}"
+          echo "Delete Workflow Runs Output: ${{ steps.DeleteWorkflowRuns.outputs.result }}"
 
       - name: Check Delete Workflow Runs Result
         if: steps.DeleteWorkflowRuns.conclusion == 'failure'
         run: |
           echo "Error deleting workflow runs: ${{ steps.DeleteWorkflowRuns.conclusion }}"
-          echo "Error message: ${{ steps.DeleteWorkflowRuns.output }}"
-          exit 1 # 终止工作流
+          echo "Error message: ${{ steps.DeleteWorkflowRuns.outputs.result }}"
+          exit 1  # 终止工作流
