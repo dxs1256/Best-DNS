@@ -1,11 +1,9 @@
-name: Update BestDNS and Delete old workflow runs
+name: Update BestDNS
 
 on:
   workflow_dispatch:  # 手动触发
   repository_dispatch:
     types: [bestdns-update]  # 匹配触发事件的名称
-  schedule:
-    - cron: '0 0 1 * *'  # 每月1日00:00执行
 
 permissions:
   contents: write  # 允许工作流推送代码
@@ -15,6 +13,7 @@ permissions:
 jobs:
   update-bestdns:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -63,19 +62,15 @@ jobs:
           git commit -m "Update output files from Fission.py execution [skip ci]"
           git push
 
-  delete-old-workflow-runs:
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: read
-    steps:
       - name: Delete workflow runs
+        id: DeleteWorkflowRuns
         uses: Mattraks/delete-workflow-runs@v2
         with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 30
-          keep_minimum_runs: 6
+          token: ${{ secrets.PAT_TOKEN }}
+          keep_minimum_runs: 2  # 保留最近的 10 次工作流记录
+          baseUrl: https://api.github.com
+          repository: dxs1256/Best-DNS  # 确保这是你的仓库名
+          dry_run: false
 
       - name: Print Delete Workflow Runs Result
         run: |
